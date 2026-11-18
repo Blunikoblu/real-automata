@@ -137,7 +137,7 @@ function salutiPanel() {
   }
   if (!net.canWrite) {
     input.disabled = true; send.disabled = true;
-    err.textContent = net.mode === 'connecting' ? 'Mi sto ancora collegando: riapri la bacheca tra qualche secondo.' : 'Per ora puoi solo leggere: la scrittura richiede la connessione multiplayer, che in questo momento non è attiva.';
+    err.textContent = net.mode === 'connecting' ? 'Mi sto ancora collegando: riapri la bacheca tra qualche secondo.' : 'Per ora la bacheca è in sola lettura: sto ancora attivando la scrittura sicura. Torna presto!';
   }
   ui.openPanel([h('h2', {}, 'Bacheca dei saluti'),
     h('p', {}, 'Una bacheca condivisa: quello che scrivi qui lo leggono tutti i visitatori. Io leggo tutto e tolgo ciò che offende o fa pubblicità.'),

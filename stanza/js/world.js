@@ -394,7 +394,7 @@ export function buildOffice(scene, data, hooks) {
   drawSaluti([], 'Caricamento…');
   add({ id: 'saluti', name: 'Bacheca dei saluti', pos: [4.4, 1.6, 2.6], radius: 2.2,
     desc: 'Una bacheca condivisa: leggi i saluti dei visitatori e lasciane uno.',
-    open: () => hooks.salutiPanel() });
+    use: () => { hooks.sound('open'); hooks.salutiPanel(); } });
 
   // ---------- Pianta, con un segreto ----------
   const plant = new THREE.Group(); plant.position.set(4.3, 0, -3.4); scene.add(plant);

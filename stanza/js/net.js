@@ -182,7 +182,7 @@ export function createNet(h) {
       } catch (e) { return { error: true, list: [] }; }
     },
     async postSaluto(nick, testo) {
-      if (!userId) return { error: 'La bacheca accetta nuovi saluti solo quando la connessione è attiva.' };
+      if (!userId) return { error: 'Per ora la bacheca è in sola lettura: la scrittura si attiva con l\'accesso anonimo.' };
       const n = cleanNick(nick), t = cleanText(testo, 80);
       if (t.length < 2) return { error: 'Scrivi almeno due caratteri.' };
       if (/(https?:\/\/|www\.|\.(com|it|net|org|io|ly)(\/|\s|$))/i.test(t)) return { error: 'Niente link, per favore: è una bacheca di saluti.' };
