@@ -296,7 +296,7 @@ export function buildOffice(scene, data, hooks) {
   {
     const g = new THREE.Group(); g.position.set(0, 0, D / 2); scene.add(g);
     box(0.1, 2.35, 0.2, 0x2a1f17, -DOOR - 0.03, 1.175, 0, g); box(0.1, 2.35, 0.2, 0x2a1f17, DOOR + 0.03, 1.175, 0, g); box(DOOR * 2 + 0.2, 0.1, 0.2, 0x2a1f17, 0, 2.33, 0, g);
-    const leaf = new THREE.Group(); leaf.position.set(DOOR, 0, 0.1); leaf.rotation.y = -1.9; g.add(leaf);
+    const leaf = new THREE.Group(); leaf.position.set(DOOR + 0.02, 0, 0.17); leaf.rotation.y = Math.PI - 0.06; g.add(leaf); // aperta verso il giardino, appoggiata alla facciata
     box(1.1, 2.2, 0.05, 0x8a6a46, -0.55, 1.1, 0, leaf); box(0.06, 0.06, 0.07, ORANGE, -1.0, 1.05, 0.04, leaf);
     sign(1.2, 0.3, canvasTex(480, 120, (gg, w, hh) => {
       gg.fillStyle = '#141413'; gg.fillRect(0, 0, w, hh); gg.fillStyle = '#5dcaa5'; gg.font = 'bold 44px monospace'; gg.textAlign = 'center';
