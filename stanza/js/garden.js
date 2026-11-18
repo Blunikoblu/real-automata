@@ -3,8 +3,8 @@
 // cielo che segue l'ora vera in Italia (giorno/notte), farfalle o lucciole, e qualche segreto.
 // Tutto low-poly e leggero: aiuole, piastrelle e sassi sono InstancedMesh (una chiamata di disegno ciascuno).
 import * as THREE from 'three';
-import { h } from './util.js?v=202611182039';
-import { Avatar } from './avatars.js?v=202611182039';
+import { h } from './util.js?v=202611182112';
+import { Avatar } from './avatars.js?v=202611182112';
 
 export const GARDEN = { x0: -9, x1: 9, z0: 4.15, z1: 19.6 };
 const POND = { x: 0, z: 12.6, r: 2.1 };

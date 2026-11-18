@@ -4,7 +4,7 @@
 // Il mondo li usa per: trofei sulla mensola, decorazioni sbloccate, festa del robottino.
 // Nessun numero viene inventato o stimato qui.
 import * as THREE from 'three';
-import { h, eur } from './util.js?v=202611182039';
+import { h, eur } from './util.js?v=202611182112';
 
 const DAY = 86400000;
 const fmt = d => d ? d.toLocaleDateString('it-IT', { day: 'numeric', month: 'long', year: 'numeric' }) : null;
@@ -35,7 +35,7 @@ export function buildTrophyShelf(world, data, list) {
   const x = -4.86, z0 = 2.45, y = 1.55;
   box(0.28, 0.05, 1.3, 0x6b4f37, x, y, z0);
   box(0.06, 0.18, 0.06, 0x4a3726, x + 0.08, y - 0.1, z0 - 0.55); box(0.06, 0.18, 0.06, 0x4a3726, x + 0.08, y - 0.1, z0 + 0.55);
-  const ok = list.filter(m => m.ok);
+  const ok = list.filter(m => m.ok).sort((a, b) => (a.quando?.getTime() ?? Infinity) - (b.quando?.getTime() ?? Infinity));
   const gold = new THREE.MeshLambertMaterial({ color: 0xfac775, emissive: 0x3a2a00, flatShading: true });
   const silver = new THREE.MeshLambertMaterial({ color: 0xc9c6bd, emissive: 0x1a1a1a, flatShading: true });
   const scene = world.desk.parent;

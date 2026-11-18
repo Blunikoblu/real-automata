@@ -1,8 +1,8 @@
 // L'ufficio: geometria low-poly, oggetti interattivi, animazioni con uno scopo.
 // I pannelli sono costruiti con h() (DOM + textContent): niente innerHTML.
 import * as THREE from 'three';
-import { ROOM, ZONES } from './config.js?v=202611182039';
-import { h, eur, wrapText } from './util.js?v=202611182039';
+import { ROOM, ZONES } from './config.js?v=202611182112';
+import { h, eur, wrapText } from './util.js?v=202611182112';
 
 const ORANGE = 0xfb923c, INK = '#141413', PAPER = '#ecebe6';
 

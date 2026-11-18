@@ -1,20 +1,20 @@
 // Real Automata · mondo virtuale. Punto di ingresso: collega mondo, personaggi, rete e interfaccia.
 import * as THREE from 'three';
-import { EMOTES, AVATARS, COLORS, NET, PARTY, CHAT, ROOM } from './config.js?v=202611182039';
-import { createParty } from './party.js?v=202611182039';
-import { h, cleanNick, eur } from './util.js?v=202611182039';
-import { loadData } from './data.js?v=202611182039';
-import { audio } from './audio.js?v=202611182039';
-import { Avatar, previewRenderer } from './avatars.js?v=202611182039';
-import { buildOffice } from './world.js?v=202611182039';
-import { buildGarden, GARDEN } from './garden.js?v=202611182039';
-import { createRobot } from './robot.js?v=202611182039';
-import { createSecrets } from './secrets.js?v=202611182039';
-import { computeProgress, buildTrophyShelf } from './progress.js?v=202611182039';
-import { createCollider, createPlayer } from './player.js?v=202611182039';
-import { createNet } from './net.js?v=202611182039';
-import { createChat } from './chat.js?v=202611182039';
-import { createUI } from './ui.js?v=202611182039';
+import { EMOTES, AVATARS, COLORS, NET, PARTY, CHAT, ROOM } from './config.js?v=202611182112';
+import { createParty } from './party.js?v=202611182112';
+import { h, cleanNick, eur } from './util.js?v=202611182112';
+import { loadData } from './data.js?v=202611182112';
+import { audio } from './audio.js?v=202611182112';
+import { Avatar, previewRenderer } from './avatars.js?v=202611182112';
+import { buildOffice } from './world.js?v=202611182112';
+import { buildGarden, GARDEN } from './garden.js?v=202611182112';
+import { createRobot } from './robot.js?v=202611182112';
+import { createSecrets } from './secrets.js?v=202611182112';
+import { computeProgress, buildTrophyShelf } from './progress.js?v=202611182112';
+import { createCollider, createPlayer } from './player.js?v=202611182112';
+import { createNet } from './net.js?v=202611182112';
+import { createChat } from './chat.js?v=202611182112';
+import { createUI } from './ui.js?v=202611182112';
 
 const isTouch = matchMedia('(pointer: coarse)').matches;
 const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;

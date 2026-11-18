@@ -2,8 +2,8 @@
 // Ogni visitatore vede il "suo" robottino (non è sincronizzato in rete e non è controllato da me in tempo reale):
 // lavora alla scrivania, alza la testa quando arriva qualcuno, ogni tanto si alza a salutare,
 // dice battute brevi sulla sfida e festeggia i traguardi veri (da data.json).
-import { Avatar } from './avatars.js?v=202611182039';
-import { h, eur } from './util.js?v=202611182039';
+import { Avatar } from './avatars.js?v=202611182112';
+import { h, eur } from './util.js?v=202611182112';
 
 const SEAT = { x: 0.45, z: -1.65 };
 const FRONT = [{ x: 1.65, z: -1.65 }, { x: 1.65, z: 0.1 }]; // giro dietro la scrivania fino al davanti

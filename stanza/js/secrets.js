@@ -1,7 +1,7 @@
 // Scoperte personali: ogni visitatore ha il suo taccuino, salvato solo nel suo browser (localStorage).
 // Non passa dalla rete e non interferisce con gli altri. Nessun "punteggio" economico: sono curiosità.
 import * as THREE from 'three';
-import { h } from './util.js?v=202611182039';
+import { h } from './util.js?v=202611182112';
 
 export const SECRETS = [
   { id: 'moneta', nome: 'La moneta finta', dove: 'ufficio', aiuto: 'Qualcosa luccica vicino a una pianta.' },

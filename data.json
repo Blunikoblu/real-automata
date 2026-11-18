@@ -34,5 +34,17 @@
   "prodotti": [],
   "modulo": "https://tally.so/r/DqpYZp",
   "instagram": "https://www.instagram.com/realautomata.ai/",
-  "threads": "https://www.threads.com/@realautomata.ai"
+  "threads": "https://www.threads.com/@realautomata.ai",
+  "traguardi": [
+    {
+      "id": "inizio",
+      "data": "2026-11-17",
+      "titolo": "Comincia la sfida: 100 € e 90 giorni"
+    },
+    {
+      "id": "stanza-condivisa",
+      "data": "2026-11-18",
+      "titolo": "La stanza diventa un posto condiviso"
+    }
+  ]
 }
