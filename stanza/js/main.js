@@ -1,14 +1,14 @@
 // Real Automata · mondo virtuale. Punto di ingresso: collega mondo, giocatore, rete e interfaccia.
 import * as THREE from 'three';
-import { EMOTES, AVATARS, COLORS, NET } from './config.js';
-import { h, cleanNick, cleanText, eur } from './util.js';
-import { loadData } from './data.js';
-import { audio } from './audio.js';
-import { Avatar, previewRenderer } from './avatars.js';
-import { buildOffice } from './world.js';
-import { createPlayer } from './player.js';
-import { createNet } from './net.js';
-import { createUI } from './ui.js';
+import { EMOTES, AVATARS, COLORS, NET } from './config.js?v=202611181835';
+import { h, cleanNick, cleanText, eur } from './util.js?v=202611181835';
+import { loadData } from './data.js?v=202611181835';
+import { audio } from './audio.js?v=202611181835';
+import { Avatar, previewRenderer } from './avatars.js?v=202611181835';
+import { buildOffice } from './world.js?v=202611181835';
+import { createPlayer } from './player.js?v=202611181835';
+import { createNet } from './net.js?v=202611181835';
+import { createUI } from './ui.js?v=202611181835';
 
 const isTouch = matchMedia('(pointer: coarse)').matches;
 const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;

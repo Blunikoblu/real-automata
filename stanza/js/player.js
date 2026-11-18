@@ -1,5 +1,5 @@
 // Controlli in prima persona: WASD/frecce + mouse su desktop, joystick + trascinamento su touch.
-import { ROOM } from './config.js';
+import { ROOM } from './config.js?v=202611181835';
 
 export function createPlayer(camera, canvas, solids, opts) {
   const isTouch = opts.isTouch;
