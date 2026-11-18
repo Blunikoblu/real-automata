@@ -46,7 +46,7 @@
   <a href="../">Preferisci leggere? Torna al sito</a>
 </div>
 
-<div class="hud"><span id="hudDay">REAL AUTOMATA</span><a href="../">← sito</a></div>
+<div class="hud"><span><span id="hudDay">REAL AUTOMATA</span> <span id="hudN" style="color:#fb923c"></span></span><a href="../">← sito</a></div>
 <div id="cross"></div>
 <button id="prompt">Apri</button>
 <div id="help"></div>
@@ -245,9 +245,63 @@ function closePanel() { panel.style.display = 'none'; }
 panel.addEventListener('pointerdown', e => { if (e.target === panel) closePanel(); });
 promptBtn.onclick = () => current && openPanel(current);
 
-document.getElementById('go').onclick = () => { document.getElementById('start').style.display = 'none'; setTimeout(() => document.getElementById('help').style.opacity = 0, 9000); };
+document.getElementById('go').onclick = () => { entered = true; document.getElementById('start').style.display = 'none'; setTimeout(() => document.getElementById('help').style.opacity = 0, 9000); };
 
 addEventListener('resize', () => { camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth, innerHeight); });
+
+
+const SB_URL = 'https://djdqscjketqelanepjng.supabase.co';
+const SB_KEY = 'sb_publishable_bHkm6fU_tXW8xhQeJEQjIA_d77H_g3T';
+const others = new Map();
+const myId = Math.random().toString(36).slice(2, 10);
+let ch = null, connected = false, entered = false, lastSent = 0, lastX = 99, lastZ = 99, lastR = 99;
+const hudN = document.getElementById('hudN');
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+function makeBot() {
+  const g = new THREE.Group();
+  box(0.4, 0.5, 0.28, 0x8a877e, 0, 0.85, 0, g);
+  box(0.34, 0.28, 0.3, 0xecebe6, 0, 1.29, 0, g);
+  const eye = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.06, 0.02), new THREE.MeshBasicMaterial({ color: ORANGE })); eye.position.set(0, 1.31, -0.16); g.add(eye);
+  box(0.02, 0.18, 0.02, 0x5f5e5a, 0, 1.52, 0, g);
+  const tip = new THREE.Mesh(new THREE.SphereGeometry(0.035, 8, 6), new THREE.MeshBasicMaterial({ color: ORANGE })); tip.position.set(0, 1.62, 0); g.add(tip);
+  box(0.1, 0.6, 0.1, 0x5f5e5a, -0.1, 0.3, 0, g); box(0.1, 0.6, 0.1, 0x5f5e5a, 0.1, 0.3, 0, g);
+  scene.add(g); return g;
+}
+function dropBot(id) { const o = others.get(id); if (!o) return; scene.remove(o.g); others.delete(id); }
+function setCount(n) { hudN.textContent = n > 1 ? `· ${n} PERSONE QUI ORA` : '· SOLO TU QUI ORA'; }
+try {
+  const { createClient } = await import('./supabase.min.js');
+  const sb = createClient(SB_URL, SB_KEY, { auth: { persistSession: false }, realtime: { params: { eventsPerSecond: 12 } } });
+  ch = sb.channel('stanza-v1', { config: { presence: { key: myId }, broadcast: { self: false } } });
+  ch.on('presence', { event: 'sync' }, () => {
+      const st = ch.presenceState(); setCount(Object.keys(st).length);
+      for (const id of [...others.keys()]) if (!st[id]) dropBot(id);
+    })
+    .on('broadcast', { event: 'pos' }, ({ payload: p }) => {
+      if (!p || typeof p.id !== 'string' || p.id.length > 12 || p.id === myId) return;
+      const x = clamp(+p.x, -5, 5), z = clamp(+p.z, -4, 4), r = +p.r;
+      if (!isFinite(x) || !isFinite(z) || !isFinite(r)) return;
+      let o = others.get(p.id);
+      if (!o) { if (others.size >= 30) return; o = { g: makeBot(), x, z, r }; o.g.position.set(x, 0, z); others.set(p.id, o); }
+      o.x = x; o.z = z; o.r = r; o.seen = performance.now();
+    })
+    .subscribe(async status => { if (status === 'SUBSCRIBED') { connected = true; await ch.track({ at: Date.now() }); } });
+  setCount(1);
+} catch (e) { hudN.textContent = ''; }
+function netTick(t) {
+  if (connected && entered && t - lastSent > 110) {
+    const p = camera.position, moved = Math.abs(p.x - lastX) + Math.abs(p.z - lastZ) + Math.abs(yaw - lastR) > 0.02;
+    if (moved || t - lastSent > 2500) {
+      ch.send({ type: 'broadcast', event: 'pos', payload: { id: myId, x: +p.x.toFixed(2), z: +p.z.toFixed(2), r: +yaw.toFixed(2) } });
+      lastSent = t; lastX = p.x; lastZ = p.z; lastR = yaw;
+    }
+  }
+  for (const [id, o] of others) {
+    if (t - (o.seen || t) > 9000) { dropBot(id); continue; }
+    o.g.position.x += (o.x - o.g.position.x) * 0.18; o.g.position.z += (o.z - o.g.position.z) * 0.18;
+    let dr = o.r - o.g.rotation.y; dr = Math.atan2(Math.sin(dr), Math.cos(dr)); o.g.rotation.y += dr * 0.2;
+  }
+}
 
 const clock = new THREE.Clock(), fwd = new THREE.Vector3(), tmp = new THREE.Vector3();
 function tick() {
@@ -273,6 +327,7 @@ function tick() {
     const s = tmp.normalize().dot(fwd) - dist * 0.1; if (s > 0.35 && s > bestS) { best = o; bestS = s; }
   }
   if (best !== current) { current = best; promptBtn.style.display = best ? 'block' : 'none'; if (best) promptBtn.textContent = (isTouch ? 'Tocca: ' : 'Premi E: ') + best.name; }
+  netTick(performance.now());
   accent.intensity = 5 + Math.sin(clock.elapsedTime * 2) * 1.5;
   renderer.render(scene, camera);
   requestAnimationFrame(tick);
