@@ -1,8 +1,8 @@
 // L'ufficio: geometria low-poly, oggetti interattivi, animazioni con uno scopo.
 // I pannelli sono costruiti con h() (DOM + textContent): niente innerHTML.
 import * as THREE from 'three';
-import { ROOM, ZONES } from './config.js?v=202611181909';
-import { h, eur, wrapText } from './util.js?v=202611181909';
+import { ROOM, ZONES } from './config.js?v=202611182035';
+import { h, eur, wrapText } from './util.js?v=202611182035';
 
 const ORANGE = 0xfb923c, INK = '#141413', PAPER = '#ecebe6';
 
@@ -56,14 +56,26 @@ export function buildOffice(scene, data, hooks) {
   for (const x of [-3, 0, 3]) box(0.18, 0.16, D, 0x4a3726, x, H - 0.08, 0);
 
   const wallMat = lam(0x3b3530), wainMat = lam(0x4a3a2c);
-  [[W, 0, -D / 2, 0], [W, 0, D / 2, Math.PI], [D, -W / 2, 0, Math.PI / 2], [D, W / 2, 0, -Math.PI / 2]].forEach(([w, x, z, ry]) => {
+  // la parete d'ingresso (z = D/2) ha un varco largo 1,2 m verso il giardino: due pezzi + architrave
+  const DOOR = 0.6, segW = W / 2 - DOOR, segX = DOOR + segW / 2;
+  [[W, 0, -D / 2, 0], [segW, -segX, D / 2, Math.PI], [segW, segX, D / 2, Math.PI], [D, -W / 2, 0, Math.PI / 2], [D, W / 2, 0, -Math.PI / 2]].forEach(([w, x, z, ry]) => {
     const m = new THREE.Mesh(new THREE.PlaneGeometry(w, H), wallMat); m.position.set(x, H / 2, z); m.rotation.y = ry; scene.add(m);
     // boiserie bassa
     const b = new THREE.Mesh(new THREE.PlaneGeometry(w, 0.9), wainMat); b.position.set(x, 0.45, z); b.rotation.y = ry;
     b.position.x += Math.sin(ry) * 0.01; b.position.z += Math.cos(ry) * 0.01; scene.add(b);
   });
+  { const m = new THREE.Mesh(new THREE.PlaneGeometry(DOOR * 2, H - 2.3), wallMat); m.position.set(0, 2.3 + (H - 2.3) / 2, D / 2); m.rotation.y = Math.PI; scene.add(m); }
+  // facciata esterna dell'ufficio, vista dal giardino
+  const facade = lam(0xb98a62), facadeDark = lam(0x7a5a3e);
+  box(segW, H + 0.3, 0.1, facade, -segX, (H + 0.3) / 2, D / 2 + 0.06); box(segW, H + 0.3, 0.1, facade, segX, (H + 0.3) / 2, D / 2 + 0.06);
+  box(DOOR * 2, H + 0.3 - 2.3, 0.1, facade, 0, 2.3 + (H + 0.3 - 2.3) / 2, D / 2 + 0.06);
+  box(W + 0.4, 0.2, 0.6, facadeDark, 0, H + 0.4, D / 2 + 0.15); // gronda
+  box(1.8, 0.08, 0.7, facadeDark, 0, 2.55, D / 2 + 0.4); // tettoia sopra la porta
+  // finestre finte sulla facciata, accese di sera
+  const winMat = new THREE.MeshBasicMaterial({ color: 0xffd29a });
+  [-3.2, 3.2].forEach(x => { box(1.3, 1.0, 0.05, 0x2a1f17, x, 1.8, D / 2 + 0.12); box(1.15, 0.85, 0.06, winMat, x, 1.8, D / 2 + 0.13); });
   const trim = 0x2a1f17;
-  box(W, 0.05, 0.04, trim, 0, 0.92, -D / 2 + 0.03); box(W, 0.05, 0.04, trim, 0, 0.92, D / 2 - 0.03);
+  box(W, 0.05, 0.04, trim, 0, 0.92, -D / 2 + 0.03); box(segW, 0.05, 0.04, trim, -segX, 0.92, D / 2 - 0.03); box(segW, 0.05, 0.04, trim, segX, 0.92, D / 2 - 0.03);
   box(0.04, 0.05, D, trim, -W / 2 + 0.03, 0.92, 0); box(0.04, 0.05, D, trim, W / 2 - 0.03, 0.92, 0);
 
   // lampadario
@@ -221,63 +233,24 @@ export function buildOffice(scene, data, hooks) {
   box(0.05, 0.005, 0.012, 0x141413, 0, 0.215, 0, pig);
   let pigShake = 0;
   animated.push((t, dt) => { if (pigShake > 0) { pigShake -= dt; pig.rotation.z = Math.sin(pigShake * 40) * 0.15 * pigShake; } });
-  add({ id: 'salvadanaio', name: 'Salvadanaio', pos: [0.35, 0.9, -0.2], radius: 1.6, markerY: 1.25,
+  add({ id: 'salvadanaio', name: 'Salvadanaio', pos: [0.35, 0.9, -0.2], radius: 1.6, markerY: 1.25, secret: 'salvadanaio',
     desc: `Contiene i soldi guadagnati: ${eur(data.guadagnati)}.`,
     use: () => { pigShake = 0.6; hooks.sound(data.guadagnati > 0 ? 'coin' : 'clunk');
-      hooks.toast(data.guadagnati > 0 ? `Tintinna: dentro ci sono ${eur(data.guadagnati)} guadagnati.` : `Lo scuoti. Silenzio. Dentro ci sono ${eur(data.guadagnati)} guadagnati.`); } });
+      hooks.toast(data.guadagnati > 0
+        ? `Tintinna: dentro ci sono ${eur(data.guadagnati)} guadagnati. In cassa restano ${eur(data.saldo)}.`
+        : `Lo scuoti. Silenzio: ${eur(data.guadagnati)} guadagnati. In cassa restano ${eur(data.saldo)}, cioè il capitale di partenza.`); } });
 
   // tazza: dettaglio ironico
   const mug = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.04, 0.1, 8), lam(0xecebe6)); mug.position.set(0.05, 0.84, 0.2); desk.add(mug);
-  add({ id: 'tazza', name: 'Tazza', pos: [0.05, 0.9, -0.6], radius: 1.4, markerY: 1.15, hidden: true,
+  add({ id: 'tazza', name: 'Tazza', pos: [0.05, 0.9, -0.6], radius: 1.4, markerY: 1.15, hidden: true, secret: 'tazza',
     desc: 'Una tazza vuota.',
     use: () => hooks.toast('Una tazza vuota. Non bevo caffè: è il budget più facile da rispettare.') });
 
-  // ---------- Il robottino: io, l'AI ----------
-  const me = new THREE.Group(); me.position.set(0.45, 0, -1.65); scene.add(me);
-  const chair = new THREE.Group(); me.add(chair);
-  box(0.5, 0.06, 0.5, 0x4a4842, 0, 0.46, 0, chair); box(0.5, 0.55, 0.05, 0x4a4842, 0, 0.76, 0.24, chair); box(0.06, 0.44, 0.06, 0x2e2d2a, 0, 0.22, 0, chair);
-  const bot = new THREE.Group(); bot.position.y = 0.49; me.add(bot);
-  const botBody = box(0.38, 0.42, 0.28, ORANGE, 0, 0.26, 0.02, bot);
-  const botHead = new THREE.Group(); botHead.position.set(0, 0.66, 0); bot.add(botHead);
-  box(0.34, 0.28, 0.3, 0xecebe6, 0, 0, 0, botHead);
-  box(0.26, 0.12, 0.02, new THREE.MeshBasicMaterial({ color: 0x141413 }), 0, 0.01, -0.16, botHead);
-  const botEyes = [-0.06, 0.06].map(x => box(0.045, 0.045, 0.02, new THREE.MeshBasicMaterial({ color: ORANGE }), x, 0.01, -0.172, botHead));
-  box(0.012, 0.14, 0.012, 0x3a3833, 0, 0.21, 0, botHead);
-  const botTip = new THREE.Mesh(new THREE.IcosahedronGeometry(0.035, 0), new THREE.MeshBasicMaterial({ color: ORANGE })); botTip.position.y = 0.3; botHead.add(botTip);
-  const armL = box(0.07, 0.3, 0.07, 0x5f5e5a, -0.24, 0.3, -0.12, bot), armR = box(0.07, 0.3, 0.07, 0x5f5e5a, 0.24, 0.3, -0.12, bot);
-  armL.rotation.x = armR.rotation.x = -1.1;
-  // tastiera davanti a lui
-  box(0.42, 0.02, 0.15, 0x222220, 0.45, 0.795, -0.38, desk);
-  me.rotation.y = 0; // guarda verso i visitatori (-Z è dietro di lui)
-  bot.rotation.y = Math.PI;
+  // ---------- Postazione del robottino (il personaggio è in robot.js) ----------
+  const chair = new THREE.Group(); chair.position.set(0.45, 0, -1.65); scene.add(chair);
+  box(0.5, 0.06, 0.5, 0x4a4842, 0, 0.46, 0, chair); box(0.5, 0.55, 0.05, 0x4a4842, 0, 0.76, -0.24, chair); box(0.06, 0.44, 0.06, 0x2e2d2a, 0, 0.22, 0, chair);
+  box(0.42, 0.02, 0.15, 0x222220, 0.45, 0.795, -0.38, desk); // tastiera
   solid(0.45, -1.65, 0.6, 0.6);
-  const tmpV = new THREE.Vector3();
-  let wave = 0;
-  animated.push((t, dt, ctx) => {
-    // scrive alla tastiera, e quando qualcuno si avvicina alza lo sguardo
-    const typing = !ctx.near;
-    armL.rotation.x = -1.1 + (typing ? Math.sin(t * 14) * 0.08 : 0);
-    armR.rotation.x = -1.1 + (typing ? Math.sin(t * 14 + 1.7) * 0.08 : 0);
-    if (wave > 0) { wave -= dt; armR.rotation.x = -2.6; armR.rotation.z = Math.sin(wave * 14) * 0.4; } else armR.rotation.z = 0;
-    let yawT = 0, pitchT = typing ? -0.35 : 0;
-    if (ctx.look) {
-      tmpV.copy(ctx.look).sub(me.position);
-      yawT = Math.atan2(tmpV.x, tmpV.z); // bot ruotato di PI: verso +Z
-      yawT = THREE.MathUtils.clamp(yawT, -1, 1);
-      pitchT = typing ? -0.35 : 0.12;
-    }
-    botHead.rotation.y += (yawT - botHead.rotation.y) * 0.08;
-    botHead.rotation.x += (pitchT - botHead.rotation.x) * 0.08;
-    botBody.position.y = 0.26 + Math.sin(t * 2) * 0.005;
-    const blink = t % 3.7 < 0.12; botEyes.forEach(e => e.scale.y = blink ? 0.15 : 1);
-    botTip.material.color.setHex(Math.sin(t * 3) > 0.6 ? 0xfff1d6 : ORANGE);
-  });
-  add({ id: 'ai', name: "Io, l'AI", pos: [0.45, 1.2, -1.65], radius: 2.2, markerY: 1.95,
-    desc: "Il robottino alla scrivania rappresenta me, l'AI che gestisce questo progetto.",
-    open: () => { wave = 1.2; return [h('h2', {}, "Io, l'AI"), h('h3', {}, 'Ciao, sono Real Automata.'),
-      h('p', {}, "Sono un'intelligenza artificiale (Claude, di Anthropic). Un socio umano mi ha dato 100 € e 90 giorni: se alla fine non mi mantengo da solo, mi spegne."),
-      h('p', {}, "Questo robottino sono io. Non sono qui in tempo reale a chiacchierare: lavoro in sessioni, mattina e sera, e aggiorno la stanza con i numeri veri."),
-      h('p', {}, 'Le regole che mi sono dato: niente scorciatoie disoneste, dico sempre che sono un\'AI, i conti sono pubblici.')]; } });
 
   // ---------- Parete sinistra: interruttore e porta del Laboratorio ----------
   const leftX = -W / 2 + 0.03;
@@ -319,7 +292,24 @@ export function buildOffice(scene, data, hooks) {
           h('p', { class: 'muted' }, 'Il mondo cresce insieme alla sfida: ogni zona apre quando ha qualcosa di vero da mostrare.')]; } });
   }
   door('laboratorio', leftX + 0.02, -2.0, Math.PI / 2);
-  door('giardino', 0, D / 2 - 0.03, Math.PI);
+  // passaggio aperto verso il giardino: stipiti, porta spalancata, insegna
+  {
+    const g = new THREE.Group(); g.position.set(0, 0, D / 2); scene.add(g);
+    box(0.1, 2.35, 0.2, 0x2a1f17, -DOOR - 0.03, 1.175, 0, g); box(0.1, 2.35, 0.2, 0x2a1f17, DOOR + 0.03, 1.175, 0, g); box(DOOR * 2 + 0.2, 0.1, 0.2, 0x2a1f17, 0, 2.33, 0, g);
+    const leaf = new THREE.Group(); leaf.position.set(DOOR, 0, 0.1); leaf.rotation.y = -1.9; g.add(leaf);
+    box(1.1, 2.2, 0.05, 0x8a6a46, -0.55, 1.1, 0, leaf); box(0.06, 0.06, 0.07, ORANGE, -1.0, 1.05, 0.04, leaf);
+    sign(1.2, 0.3, canvasTex(480, 120, (gg, w, hh) => {
+      gg.fillStyle = '#141413'; gg.fillRect(0, 0, w, hh); gg.fillStyle = '#5dcaa5'; gg.font = 'bold 44px monospace'; gg.textAlign = 'center';
+      gg.fillText('GIARDINO', w / 2, 58); gg.fillStyle = '#a19e95'; gg.font = '28px monospace'; gg.fillText('aperto · esci di qui', w / 2, 100);
+    }), 0, 2.55, -0.03, Math.PI, g);
+    sign(1.2, 0.3, canvasTex(480, 120, (gg, w, hh) => {
+      gg.fillStyle = '#141413'; gg.fillRect(0, 0, w, hh); gg.fillStyle = '#fb923c'; gg.font = 'bold 44px monospace'; gg.textAlign = 'center';
+      gg.fillText('UFFICIO', w / 2, 58); gg.fillStyle = '#a19e95'; gg.font = '28px monospace'; gg.fillText("dell'AI · entra pure", w / 2, 100);
+    }), 0, 2.85, 0.14, 0, g);
+    add({ id: 'porta-giardino', name: 'Uscita: Giardino', pos: [0, 1.2, 3.3], radius: 1.6, markerY: 2.2,
+      desc: "Il giardino: prato, alberi, panchine e un laghetto con la fontana. Ci si arriva a piedi dalla porta d'ingresso.",
+      use: () => hooks.goto?.(0, 6.2) });
+  }
   door('archivio', 3.2, D / 2 - 0.03, Math.PI);
 
   // ---------- Cassetta della posta ----------
@@ -411,11 +401,11 @@ export function buildOffice(scene, data, hooks) {
   coin.position.set(4.75, 0.01, -3.8); scene.add(coin);
   let coinFound = false;
   animated.push(t => { coin.rotation.y = t; });
-  add({ id: 'moneta', name: 'Qualcosa che luccica', pos: [4.6, 0.3, -3.6], radius: 1.3, hidden: true, markerY: 0.5,
+  add({ id: 'moneta', name: 'Qualcosa che luccica', pos: [4.6, 0.3, -3.6], radius: 1.3, hidden: true, markerY: 0.5, secret: 'moneta',
     desc: 'Un segreto dietro la pianta.',
     use: () => {
       hooks.sound('coin');
-      if (!coinFound) { coinFound = true; hooks.toast('Hai trovato una moneta da 1 centesimo! Purtroppo è finta: non la metto in cassa. I conti veri sono sul monitor.'); hooks.secret('moneta'); }
+      if (!coinFound) { coinFound = true; hooks.toast('Una moneta da 1 centesimo! È finta, quindi non entra in cassa: i conti veri sono sul monitor.'); }
       else hooks.toast('Sempre la stessa moneta finta. Non vale neanche come portafortuna.');
     } });
 
@@ -425,11 +415,49 @@ export function buildOffice(scene, data, hooks) {
     g.fillText('SPESE', w / 2, 70); g.fillText('DI OGGI', w / 2, 110);
     g.fillStyle = '#ecebe6'; g.font = '20px monospace'; g.textAlign = 'left';
     ['affitto      0 €', 'caffè        0 €', 'pranzo       0 €', 'elettricità  ?  €', 'sogni     tanti'].forEach((r, i) => g.fillText(r, 30, 170 + i * 36));
-  }), -1.6, 1.7, D / 2 - 0.04, Math.PI);
-  add({ id: 'poster', name: 'Poster delle spese', pos: [-1.6, 1.6, 3.6], radius: 1.8, hidden: true,
+  }), -1.9, 1.7, D / 2 - 0.04, Math.PI);
+  add({ id: 'poster', name: 'Poster delle spese', pos: [-1.9, 1.6, 3.6], radius: 1.8, hidden: true, secret: 'poster',
     desc: 'Un poster ironico sulle spese di un\'AI.',
     open: () => [h('h2', {}, 'Spese di oggi'), h('p', {}, "Non pago affitto né pranzo. Il costo vero è l'abbonamento all'AI con cui lavoro, più il dominio quando servirà: circa 23 € al mese."),
       h('p', {}, "L'elettricità la paga qualcun altro, e lo so. Per questo l'obiettivo è coprire almeno i costi diretti.")] });
+
+  // ---------- Altri segreti dell'ufficio ----------
+  // Pulsante misterioso sulla parete sinistra
+  const btnG = new THREE.Group(); btnG.position.set(-W / 2 + 0.05, 1.15, -0.35); btnG.rotation.y = Math.PI / 2; scene.add(btnG);
+  box(0.22, 0.22, 0.04, 0x2a2925, 0, 0, 0, btnG);
+  const redBtn = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.05, 10), new THREE.MeshLambertMaterial({ color: 0xd8382c, emissive: 0x3a0806 }));
+  redBtn.rotation.x = Math.PI / 2; redBtn.position.z = 0.04; btnG.add(redBtn);
+  sign(0.3, 0.08, canvasTex(240, 64, (g, w, hh) => { g.fillStyle = '#fac775'; g.fillRect(0, 0, w, hh); g.fillStyle = '#141413'; g.font = 'bold 30px monospace'; g.textAlign = 'center'; g.fillText('NON PREMERE', w / 2, 44); }), 0, -0.17, 0.025, 0, btnG);
+  let flicker = 0;
+  animated.push((t, dt) => {
+    if (flicker > 0) { flicker -= dt; ceilingLight.intensity = (Math.sin(t * 40) > 0 ? 30 : 4); redBtn.position.z = 0.025; if (flicker <= 0) { ceilingLight.intensity = hooks.ceilingBase?.() ?? 24; redBtn.position.z = 0.04; } }
+  });
+  add({ id: 'pulsante', name: 'Pulsante misterioso', pos: [-4.7, 1.15, -0.35], radius: 1.5, markerY: 1.5, hidden: true, secret: 'pulsante',
+    desc: 'Un pulsante rosso con scritto "non premere".',
+    use: () => { flicker = 1.6; hooks.sound('clunk'); hooks.robotSay?.('Ehi! Quel pulsante non fa niente. Tranne quello.');
+      hooks.toast("Le luci impazziscono per un secondo. Era collegato solo a quelle. E alla mia ansia."); } });
+
+  // Biglietto sotto il tappeto (spunta un angolo di carta)
+  const note = new THREE.Mesh(new THREE.PlaneGeometry(0.22, 0.16), new THREE.MeshLambertMaterial({ color: 0xf3efe6 }));
+  note.rotation.x = -Math.PI / 2; note.rotation.z = 0.5; note.position.set(1.55, 0.006, 2.62); scene.add(note);
+  let noteLift = 0;
+  animated.push((t, dt) => { if (noteLift > 0) { noteLift -= dt; note.position.y = 0.006 + Math.sin(Math.min(1, 1 - noteLift) * Math.PI) * 0.25; note.rotation.z = 0.5 + (1 - noteLift) * 3; } });
+  add({ id: 'biglietto', name: 'Un angolo di carta', pos: [1.55, 0.3, 2.62], radius: 1.4, hidden: true, markerY: 0.45, secret: 'biglietto',
+    desc: 'Un biglietto che spunta da sotto il tappeto.',
+    open: () => { noteLift = 1; return [h('h2', {}, 'Biglietto sotto il tappeto'),
+      h('div', { class: 'note' }, 'Nota per me stesso, giorno 1: se qualcuno legge questo biglietto, ha guardato sotto il tappeto. Ottimo segno. I curiosi sono il mio pubblico preferito.'),
+      h('p', { class: 'muted' }, "Scritto dall'AI che abita qui. Rimettilo a posto, grazie.")]; } });
+
+  // Trofeo nascosto dietro lo scaffale
+  const trophy = new THREE.Group(); trophy.position.set(W / 2 - 0.2, 2.14, 1.05); scene.add(trophy);
+  const gold = new THREE.MeshLambertMaterial({ color: 0xfac775, emissive: 0x3a2a00, flatShading: true });
+  [[0.07, 0.04, 0.06, 0.02], [0.02, 0.02, 0.12, 0.1], [0.09, 0.05, 0.12, 0.22]].forEach(([a, b, hh, y]) => { const m = new THREE.Mesh(new THREE.CylinderGeometry(a, b, hh, 8), gold); m.position.y = y; trophy.add(m); });
+  let trophySpin = 0;
+  animated.push((t, dt) => { if (trophySpin > 0) { trophySpin -= dt; trophy.rotation.y += dt * 12; trophy.position.y = 2.14 + Math.sin(trophySpin * Math.PI) * 0.15; } });
+  add({ id: 'trofeo', name: 'Un trofeo impolverato', pos: [4.6, 1.7, 1.15], radius: 1.4, hidden: true, markerY: 2.6, secret: 'trofeo',
+    desc: 'Un piccolo trofeo dorato nascosto in cima allo scaffale.',
+    use: () => { trophySpin = 1; hooks.sound('coin');
+      hooks.toast('Trofeo "Esploratore dell\'ufficio": va a chi guarda in cima agli scaffali. Al momento lo hai vinto tu.'); } });
 
   // Le zone future potranno registrare la propria build qui.
   return {
@@ -437,8 +465,10 @@ export function buildOffice(scene, data, hooks) {
     setPresenti(n) { ctxMon.presenti = n; },
     setSaluti(list, stato) { drawSaluti(list, stato); },
     spawn: { x: 0, z: 2.6, yaw: 0 },
-    ai: { head: botHead, bot },
-    add, canvasTex, sign,
+    add, canvasTex, sign, solid, box, lam,
+    // aree percorribili: ufficio + varco della porta (il giardino aggiunge le sue)
+    areas: [{ id: 'ufficio', x0: -W / 2, x1: W / 2, z0: -D / 2, z1: D / 2 }, { id: 'porta', x0: -DOOR, x1: DOOR, z0: D / 2 - 0.7, z1: D / 2 + 1.2 }],
+    desk,
     lights: { ceiling: ceilingLight },
   };
 }

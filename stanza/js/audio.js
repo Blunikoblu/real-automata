@@ -28,7 +28,36 @@ function tone(freq, dur, type = 'sine', vol = 0.15, slide = 0) {
   o.connect(g).connect(master); o.start(t); o.stop(t + dur + 0.02);
 }
 
+// Ambiente del giardino: acqua della fontana (rumore filtrato) + uccellini di giorno / grilli di notte.
+let water = null, ambT = 0, amb = { area: 'ufficio', night: false, fontana: 0 };
+function ensureWater() {
+  if (water || !ensure()) return;
+  const len = ctx.sampleRate * 2, buf = ctx.createBuffer(1, len, ctx.sampleRate), d = buf.getChannelData(0);
+  for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+  const src = ctx.createBufferSource(); src.buffer = buf; src.loop = true;
+  const bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 1400; bp.Q.value = 0.6;
+  water = ctx.createGain(); water.gain.value = 0;
+  src.connect(bp).connect(water).connect(master); src.start();
+}
+
 export const audio = {
+  // chiamato ~ogni frame: aggiorna i suoni d'ambiente (molto discreti)
+  ambient(dt, state) {
+    amb = state; if (!enabled || !ctx) return;
+    ensureWater();
+    water.gain.setTargetAtTime(state.area === 'giardino' ? 0.05 * state.fontana : 0, ctx.currentTime, 0.4);
+    hum.gain.setTargetAtTime(state.area === 'giardino' ? 0.015 : 0.05, ctx.currentTime, 0.5);
+    ambT -= dt;
+    if (ambT <= 0 && state.area === 'giardino') {
+      ambT = 1.5 + Math.random() * 4;
+      if (state.night) { for (let i = 0; i < 3; i++) setTimeout(() => tone(4200 + Math.random() * 300, 0.04, 'sine', 0.012), i * 70); }
+      else { const f = 2200 + Math.random() * 1200; tone(f, 0.09, 'sine', 0.018, 1.3); setTimeout(() => tone(f * 1.2, 0.08, 'sine', 0.015, 0.9), 120); }
+    }
+  },
+  sparkle() { [1047, 1319, 1568, 2093].forEach((f, i) => setTimeout(() => tone(f, 0.12, 'sine', 0.05), i * 70)); },
+  quack() { tone(420, 0.12, 'sawtooth', 0.05, 0.7); setTimeout(() => tone(400, 0.14, 'sawtooth', 0.05, 0.6), 160); },
+  snore() { tone(90, 0.6, 'sawtooth', 0.03, 1.4); },
+  chat() { tone(880, 0.05, 'sine', 0.035); },
   context() { return ensure() ? ctx : null; },
   output() { return master; },
   unlock() { ensure(); if (ctx && ctx.state === 'suspended') ctx.resume(); },

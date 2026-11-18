@@ -1,17 +1,31 @@
-// Controlli in prima persona: WASD/frecce + mouse su desktop, joystick + trascinamento su touch.
-import { ROOM } from './config.js?v=202611181909';
+// Movimento del visitatore: WASD/frecce + mouse su desktop, joystick + trascinamento su touch,
+// e "tocca per andare" (clic o tocco su un punto o su un oggetto). Le collisioni arrivano dal mondo
+// come aree percorribili + ostacoli: per aggiungere una zona basta aggiungere le sue aree.
 
-export function createPlayer(camera, canvas, solids, opts) {
-  const isTouch = opts.isTouch;
-  const R = 0.3;
-  let yaw = opts.spawn.yaw, pitch = -0.05, enabled = false, stepAcc = 0;
-  camera.rotation.order = 'YXZ';
-  camera.position.set(opts.spawn.x, 1.6, opts.spawn.z);
-
+// Collisioni: un punto è libero se cade in almeno un'area (ristretta del raggio) e in nessun ostacolo.
+export function createCollider(R = 0.3) {
+  const areas = [], solids = [];
   function blocked(x, z) {
-    if (x < -ROOM.W / 2 + R || x > ROOM.W / 2 - R || z < -ROOM.D / 2 + R || z > ROOM.D / 2 - R) return true;
-    return solids.some(s => x > s.x - s.w / 2 - R && x < s.x + s.w / 2 + R && z > s.z - s.d / 2 - R && z < s.z + s.d / 2 + R);
+    let inside = false;
+    for (const a of areas) if (x >= a.x0 + R && x <= a.x1 - R && z >= a.z0 + R && z <= a.z1 - R) { inside = true; break; }
+    if (!inside) return true;
+    for (const s of solids) {
+      if (s.r != null) { const dx = x - s.x, dz = z - s.z; if (dx * dx + dz * dz < (s.r + R) * (s.r + R)) return true; }
+      else if (x > s.x - s.w / 2 - R && x < s.x + s.w / 2 + R && z > s.z - s.d / 2 - R && z < s.z + s.d / 2 + R) return true;
+    }
+    return false;
   }
+  // per la camera in terza persona: dentro un'area (senza considerare gli ostacoli bassi)
+  function open(x, z, m = 0.12) { return areas.some(a => x >= a.x0 + m && x <= a.x1 - m && z >= a.z0 + m && z <= a.z1 - m); }
+  return { areas, solids, blocked, open, R };
+}
+
+export function createPlayer(canvas, collider, opts) {
+  const isTouch = opts.isTouch;
+  const pos = { x: opts.spawn.x, z: opts.spawn.z };
+  let yaw = opts.spawn.yaw, pitch = -0.05, enabled = false, stepAcc = 0, bob = 0;
+  let auto = null;   // camminata automatica { x, z, then }
+  let seated = null; // panchina su cui sei seduto
 
   const keys = {};
   const typing = () => { const a = document.activeElement; return a && (a.tagName === 'INPUT' || a.tagName === 'TEXTAREA'); };
@@ -19,19 +33,26 @@ export function createPlayer(camera, canvas, solids, opts) {
   addEventListener('keyup', e => { keys[e.code] = false; });
   addEventListener('blur', () => { for (const k in keys) keys[k] = false; });
 
-  // guardarsi intorno trascinando
-  let lookId = null, lx = 0, ly = 0;
+  // trascinare = guardarsi intorno; un tocco breve senza trascinare = "vai lì"
+  let lookId = null, lx = 0, ly = 0, downX = 0, downY = 0, downT = 0, dragged = false;
   canvas.addEventListener('pointerdown', e => {
-    if (!enabled || (isTouch && e.clientX < innerWidth * 0.45)) return;
-    lookId = e.pointerId; lx = e.clientX; ly = e.clientY; canvas.setPointerCapture(e.pointerId);
+    if (!enabled || lookId !== null) return;
+    lookId = e.pointerId; lx = downX = e.clientX; ly = downY = e.clientY; downT = performance.now(); dragged = false;
+    canvas.setPointerCapture(e.pointerId);
   });
   canvas.addEventListener('pointermove', e => {
     if (e.pointerId !== lookId) return;
+    if (!dragged && Math.hypot(e.clientX - downX, e.clientY - downY) > 8) { dragged = true; lx = e.clientX; ly = e.clientY; }
+    if (!dragged) return;
     const k = isTouch ? 0.007 : 0.005;
     yaw -= (e.clientX - lx) * k; pitch -= (e.clientY - ly) * k * 0.8;
-    pitch = Math.max(-1.1, Math.min(1.1, pitch)); lx = e.clientX; ly = e.clientY;
+    pitch = Math.max(opts.pitchMin ?? -1.1, Math.min(opts.pitchMax ?? 1.1, pitch)); lx = e.clientX; ly = e.clientY;
   });
-  const endLook = e => { if (e.pointerId === lookId) lookId = null; };
+  const endLook = e => {
+    if (e.pointerId !== lookId) return;
+    lookId = null;
+    if (!dragged && e.type === 'pointerup' && performance.now() - downT < 450) opts.onTap?.(e.clientX, e.clientY);
+  };
   canvas.addEventListener('pointerup', endLook); canvas.addEventListener('pointercancel', endLook);
 
   // joystick virtuale
@@ -44,43 +65,63 @@ export function createPlayer(camera, canvas, solids, opts) {
     if (m > max) { dx *= max / m; dy *= max / m; }
     knob.style.transform = `translate(${dx}px, ${dy}px)`; jv = { x: dx / max, y: dy / max };
   }
-  joy.addEventListener('pointerdown', e => { if (!enabled) return; joyId = e.pointerId; joy.setPointerCapture(e.pointerId); joyMove(e); });
+  joy.addEventListener('pointerdown', e => { if (!enabled) return; e.preventDefault(); joyId = e.pointerId; joy.setPointerCapture(e.pointerId); joyMove(e); });
   joy.addEventListener('pointermove', e => { if (e.pointerId === joyId) joyMove(e); });
   const endJoy = () => { joyId = null; jv = { x: 0, y: 0 }; knob.style.transform = ''; };
   joy.addEventListener('pointerup', endJoy); joy.addEventListener('pointercancel', endJoy);
 
-  let bob = 0;
+  function tryMove(sx, sz) {
+    let moved = false;
+    if (!collider.blocked(pos.x + sx, pos.z)) { pos.x += sx; moved = true; }
+    if (!collider.blocked(pos.x, pos.z + sz)) { pos.z += sz; moved = true; }
+    return moved;
+  }
+
   return {
-    get yaw() { return yaw; },
-    get pos() { return camera.position; },
+    pos, bob: 0,
+    get yaw() { return yaw; }, get pitch() { return pitch; },
+    get seated() { return seated; },
     set enabled(v) { enabled = v; if (!v) { for (const k in keys) keys[k] = false; endJoy(); lookId = null; } },
     get enabled() { return enabled; },
-    teleport(x, z, y) { camera.position.x = x; camera.position.z = z; if (y != null) yaw = y; },
+    get autoWalking() { return !!auto; },
+    teleport(x, z, y) { pos.x = x; pos.z = z; if (y != null) yaw = y; auto = null; seated = null; },
+    standUp() { if (seated) { pos.x = seated.sx; pos.z = seated.sz; seated = null; } },
     look(y, p) { yaw = y; pitch = p; },
-    lookAt(x, z) { yaw = Math.atan2(-(x - camera.position.x), -(z - camera.position.z)); pitch = -0.05; },
+    lookAt(x, z) { yaw = Math.atan2(-(x - pos.x), -(z - pos.z)); pitch = -0.05; },
+    walkTo(x, z, then) { if (seated) { pos.x = seated.sx; pos.z = seated.sz; seated = null; } auto = { x, z, then, stuck: 0 }; },
+    stop() { auto = null; },
+    sit(s) { seated = s; auto = null; pos.x = s.x; pos.z = s.z; yaw = s.yaw; },
     update(dt) {
-      let mx = 0, mz = 0;
+      let mx = 0, mz = 0, turn = 0;
       if (enabled) {
         if (keys.KeyW || keys.ArrowUp) mz -= 1; if (keys.KeyS || keys.ArrowDown) mz += 1;
         if (keys.KeyA) mx -= 1; if (keys.KeyD) mx += 1;
-        // frecce sinistra/destra: girano lo sguardo (utile senza mouse)
-        if (keys.ArrowLeft) yaw += 1.8 * dt; if (keys.ArrowRight) yaw -= 1.8 * dt;
+        if (keys.ArrowLeft || keys.KeyQ) turn += 1; if (keys.ArrowRight || keys.KeyR) turn -= 1;
         mx += jv.x; mz += jv.y;
       }
+      yaw += turn * 1.8 * dt;
       const len = Math.hypot(mx, mz);
-      let speed = 0;
+      const ox = pos.x, oz = pos.z;
       if (len > 0.05) {
+        auto = null;
+        if (seated) { pos.x = seated.sx; pos.z = seated.sz; seated = null; } // ci si rialza davanti alla panchina
         const run = keys.ShiftLeft || keys.ShiftRight ? 1.6 : 1;
-        const sp = 2.3 * run * dt / Math.max(1, len);
-        const sx = (mx * Math.cos(yaw) + mz * Math.sin(yaw)) * sp, sz = (-mx * Math.sin(yaw) + mz * Math.cos(yaw)) * sp;
-        const p = camera.position, ox = p.x, oz = p.z;
-        if (!blocked(p.x + sx, p.z)) p.x += sx; if (!blocked(p.x, p.z + sz)) p.z += sz;
-        const d = Math.hypot(p.x - ox, p.z - oz); speed = d / dt;
-        bob += d * 7; stepAcc += d;
-        if (stepAcc > 0.7) { stepAcc = 0; opts.onStep?.(); }
+        const sp = 2.4 * run * dt / Math.max(1, len);
+        tryMove((mx * Math.cos(yaw) + mz * Math.sin(yaw)) * sp, (-mx * Math.sin(yaw) + mz * Math.cos(yaw)) * sp);
+      } else if (auto && enabled) {
+        const dx = auto.x - pos.x, dz = auto.z - pos.z, d = Math.hypot(dx, dz);
+        if (d < 0.15) { const then = auto.then; auto = null; then?.(); }
+        else {
+          const sp = Math.min(d, 2.4 * dt);
+          const want = Math.atan2(-dx, -dz); let dy = want - yaw; dy = Math.atan2(Math.sin(dy), Math.cos(dy)); yaw += dy * Math.min(1, dt * 8);
+          if (!tryMove(dx / d * sp, dz / d * sp)) { auto.stuck += dt; if (auto.stuck > 0.4) { const then = auto.then; auto = null; if (d < 1.8) then?.(); } }
+          else auto.stuck = 0;
+        }
       }
-      camera.position.y = 1.6 + Math.sin(bob) * 0.018;
-      camera.rotation.set(pitch, yaw, 0);
+      const moved = Math.hypot(pos.x - ox, pos.z - oz);
+      let speed = 0;
+      if (moved > 0) { speed = moved / dt; bob += moved * 7; stepAcc += moved; if (stepAcc > 0.7) { stepAcc = 0; opts.onStep?.(); } }
+      this.bob = Math.sin(bob) * 0.018;
       return speed;
     },
   };

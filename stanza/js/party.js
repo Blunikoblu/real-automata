@@ -2,7 +2,7 @@
 // Ogni visitatore calcola da solo se il party è in corso (ora italiana): niente server.
 // ?party=1 nell'indirizzo forza l'anteprima (utile per le prove).
 import * as THREE from 'three';
-import { PARTY, ROOM } from './config.js?v=202611181909';
+import { PARTY, ROOM } from './config.js?v=202611182035';
 
 const WEEK = 7 * 1440;
 const DAYS = ['domenica', 'lunedì', 'martedì', 'mercoledì', 'giovedì', 'venerdì', 'sabato'];
@@ -29,7 +29,7 @@ export function partyInfo(d = new Date()) {
   return { live, forced: forced && since >= PARTY.durataMin, quando, fra, untilNext };
 }
 
-export function createParty({ scene, world, audio }) {
+export function createParty({ scene, world, audio, robot }) {
   const group = new THREE.Group(); group.visible = false; scene.add(group);
   const { W, D, H } = ROOM;
   const glow = c => new THREE.MeshBasicMaterial({ color: c });
@@ -76,7 +76,7 @@ export function createParty({ scene, world, audio }) {
 
   // cappellino per il robottino
   const hat = new THREE.Mesh(new THREE.ConeGeometry(0.1, 0.24, 8), new THREE.MeshLambertMaterial({ color: 0xed93b1, flatShading: true }));
-  hat.position.set(0.08, 0.24, 0); hat.rotation.z = -0.3; hat.visible = false; world.ai.head.add(hat);
+  hat.position.set(0.08, 0.24, 0); hat.rotation.z = -0.3; hat.visible = false; robot.avatar.head.add(hat);
 
   // coriandoli (un'unica geometria a punti, nessun costo se fermi)
   const N = 260, pos = new Float32Array(N * 3), col = new Float32Array(N * 3), vel = new Float32Array(N * 3);
@@ -147,12 +147,14 @@ export function createParty({ scene, world, audio }) {
   function setLive(v) {
     live = v; group.visible = v; hat.visible = v;
     world.lights.ceiling.intensity = v ? 12 : 24;
+    robot.setParty(v);
     if (v) startMusic(); else stopMusic();
   }
   setLive(info.live);
 
   return {
     get live() { return live; },
+    ceilingBase() { return live ? 12 : 24; },
     get info() { return info; },
     get musicOn() { return musicOn; },
     toggleMusic() { musicOn = !musicOn; try { localStorage.setItem('ra_musica', musicOn ? 'on' : 'off'); } catch (e) {} if (musicOn && live) startMusic(); else stopMusic(); return musicOn; },
@@ -166,7 +168,6 @@ export function createParty({ scene, world, audio }) {
         balloons.forEach(o => { o.b.position.y = o.y + Math.sin(t * 0.8 + o.ph) * 0.06; o.b.rotation.y = Math.sin(t * 0.5 + o.ph) * 0.3; });
         disco.rotation.y = t * 0.6;
         discoLights.forEach((l, i) => { const a = t * 0.9 + i * 2.1; l.position.set(Math.cos(a) * 3, 1.2 + Math.sin(t + i) * 0.4, 0.5 + Math.sin(a) * 2.4); });
-        world.ai.bot.position.y = 0.49 + Math.abs(Math.sin(t * Math.PI * 112 / 60)) * 0.03; // il robottino tiene il tempo
       }
       if (confT > 0) {
         confT -= dt;

@@ -1,7 +1,7 @@
 // Interfaccia: intro, HUD, pannelli, notifiche, impostazioni, modalità elenco.
 // Tutto il testo variabile passa da textContent (tramite h()).
-import { AVATARS, COLORS, EMOTES } from './config.js?v=202611181909';
-import { h, cleanNick } from './util.js?v=202611181909';
+import { AVATARS, COLORS, EMOTES } from './config.js?v=202611182035';
+import { h, cleanNick } from './util.js?v=202611182035';
 
 const $ = id => document.getElementById(id);
 
@@ -84,10 +84,15 @@ export function createUI() {
     });
   }
 
+  // 👋 ha il suo pulsante; le altre reazioni stanno nel vassoio che si apre con 😊
   function emoteBar(onEmote, list = EMOTES) {
-    const bar = $('emotes');
-    bar.replaceChildren(...list.map(e => h('button', { type: 'button', title: `${e.label} (${e.key})`, 'aria-label': e.label, onclick: () => onEmote(e.id) }, e.glyph)));
+    const bar = $('emotes'), more = $('moreBtn');
+    bar.replaceChildren(...list.filter(e => e.id !== 'wave').map(e => h('button', { type: 'button', title: `${e.label} (${e.key})`, 'aria-label': e.label,
+      onclick: () => { onEmote(e.id); if (matchMedia('(pointer: coarse)').matches) toggleTray(false); } }, e.glyph)));
+    $('waveBtn').onclick = () => onEmote('wave');
+    more.onclick = () => toggleTray(bar.hidden);
   }
+  function toggleTray(open) { $('emotes').hidden = !open; $('moreBtn').setAttribute('aria-expanded', String(open)); }
 
   return { openPanel, closePanel, get panelOpen() { return !panel.hidden; }, toast, setStatus, setCount, intro, emoteBar };
 }

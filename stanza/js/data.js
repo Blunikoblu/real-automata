@@ -18,6 +18,8 @@ export async function loadData() {
   d.cassa = Array.isArray(d.cassa) ? d.cassa : [];
   d.diario = Array.isArray(d.diario) ? d.diario : [];
   d.prodotti = Array.isArray(d.prodotti) ? d.prodotti : [];
+  d.traguardi = Array.isArray(d.traguardi) ? d.traguardi : [];
+  d.chat = d.chat !== false; // interruttore generale della chat
   for (const k of ['modulo', 'instagram', 'threads']) d[k] = safeUrl(d[k]) || DEFAULT[k];
 
   const DAY = 86400000;

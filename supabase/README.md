@@ -33,6 +33,17 @@ La `service_role` e le altre chiavi segrete non vanno **mai** nel repository.
 - Broadcast `emo` (emoji, un elenco fisso, al massimo una ogni 1,2 s) e `sal` (avviso "bacheca aggiornata").
 - Riconnessione automatica con attesa crescente (2, 4, 8… fino a 30 s).
 
+## Chat (mondo v2, migrazione `mondo_v2_chat`, file `002_chat.sql`)
+- I visitatori **non** scrivono direttamente sul canale della chat (`mondo-v1-chat`): hanno solo il permesso di lettura.
+- Si scrive chiamando la funzione `public.invia_chat(testo, nick, sid)` (solo utenti con sessione, anche anonima). La funzione:
+  - pulisce il testo (niente caratteri di controllo, massimo 100 caratteri, niente link);
+  - applica i limiti: un messaggio ogni 2 secondi e al massimo 6 ogni 30 secondi per utente (tabella `chat_limiti`, che contiene solo orari);
+  - pubblica il messaggio con `realtime.send` aggiungendo `u`, un'impronta dell'utente vero (12 caratteri di SHA-256 dell'id anonimo).
+- Il browser mette il fumetto sopra un personaggio **solo se** l'impronta del messaggio coincide con quella dichiarata da quel personaggio
+  in Presence. Chi modifica il proprio client non può quindi far "parlare" l'avatar di un altro.
+- Conservazione: nessuna tabella con i testi. I messaggi passano da `realtime.messages`, che Supabase cancella da solo dopo 3 giorni.
+- Spegnere la chat per tutti: `"chat": false` in `data.json`. Ogni visitatore può spegnerla per sé (Menu → Chat) o silenziare qualcuno (Chi è online).
+
 ## Moderazione della bacheca
 Dal pannello SQL:
 ```sql
@@ -40,9 +51,15 @@ select id, nick, testo, created_at from public.saluti order by created_at desc l
 update public.saluti set nascosto = true where id = <id>;
 ```
 
-## Limiti noti (v1)
-- Il broadcast non firma il mittente: un client modificato potrebbe inviare posizioni a nome di un altro visitatore presente.
-  L'effetto è solo visivo (un avatar che si sposta), perché nulla viene salvato.
+## Limiti noti
+- **Posizioni, reazioni e saluti** viaggiano via broadcast dal browser (servono 10 messaggi al secondo, non possono passare dal database):
+  il server non firma il mittente, quindi un client modificato potrebbe muovere l'avatar di un altro visitatore presente o mandare una
+  reazione "a suo nome". L'effetto è solo visivo e momentaneo: niente viene salvato. La **chat** invece è protetta (vedi sopra).
+- I **nickname** non sono unici: due visitatori possono chiamarsi uguale. Nella chat, i messaggi che non si riescono ad abbinare a un
+  personaggio presente sono segnati con "(?)" e non compaiono nei fumetti.
+- Il **robottino** non è sincronizzato: ogni visitatore vede il suo (stesse battute, tempi diversi).
+- Avvisi del controllo di sicurezza di Supabase: "Anonymous Access Policies" (voluto: è l'accesso senza registrazione) e
+  "Leaked Password Protection" (non riguarda il progetto: non ci sono password).
 - Piano gratuito di Supabase: fino a 200 connessioni realtime contemporanee, ben oltre l'obiettivo di 20–30.
   Il progetto va in pausa dopo 7 giorni senza attività: le sessioni di lavoro lo controllano e lo riattivano.
 
