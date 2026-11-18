@@ -29,6 +29,8 @@ function tone(freq, dur, type = 'sine', vol = 0.15, slide = 0) {
 }
 
 export const audio = {
+  context() { return ensure() ? ctx : null; },
+  output() { return master; },
   unlock() { ensure(); if (ctx && ctx.state === 'suspended') ctx.resume(); },
   get enabled() { return enabled; },
   toggle() {

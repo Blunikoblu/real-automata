@@ -1,14 +1,15 @@
 // Real Automata · mondo virtuale. Punto di ingresso: collega mondo, giocatore, rete e interfaccia.
 import * as THREE from 'three';
-import { EMOTES, AVATARS, COLORS, NET } from './config.js?v=202611181835';
-import { h, cleanNick, cleanText, eur } from './util.js?v=202611181835';
-import { loadData } from './data.js?v=202611181835';
-import { audio } from './audio.js?v=202611181835';
-import { Avatar, previewRenderer } from './avatars.js?v=202611181835';
-import { buildOffice } from './world.js?v=202611181835';
-import { createPlayer } from './player.js?v=202611181835';
-import { createNet } from './net.js?v=202611181835';
-import { createUI } from './ui.js?v=202611181835';
+import { EMOTES, AVATARS, COLORS, NET, PARTY } from './config.js?v=202611181900';
+import { createParty } from './party.js?v=202611181900';
+import { h, cleanNick, cleanText, eur } from './util.js?v=202611181900';
+import { loadData } from './data.js?v=202611181900';
+import { audio } from './audio.js?v=202611181900';
+import { Avatar, previewRenderer } from './avatars.js?v=202611181900';
+import { buildOffice } from './world.js?v=202611181900';
+import { createPlayer } from './player.js?v=202611181900';
+import { createNet } from './net.js?v=202611181900';
+import { createUI } from './ui.js?v=202611181900';
 
 const isTouch = matchMedia('(pointer: coarse)').matches;
 const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -47,6 +48,36 @@ const hooks = {
   salutiPanel: () => salutiPanel(),
 };
 const world = buildOffice(scene, data, hooks);
+const party = createParty({ scene, world, audio });
+
+// Locandina del party sulla parete d'ingresso (si aggiorna da sola)
+const posterTex = world.canvasTex(300, 400, () => {});
+function drawPoster() {
+  const { g } = posterTex.userData, w = 300, hh = 400, i = party.info;
+  g.fillStyle = '#2a1f17'; g.fillRect(0, 0, w, hh);
+  ['#fb923c', '#5dcaa5', '#85b7eb', '#ed93b1'].forEach((c, k) => { g.fillStyle = c; g.beginPath(); g.arc(40 + k * 72, 46, 16, 0, 7); g.fill(); });
+  g.fillStyle = '#fac775'; g.textAlign = 'center'; g.font = 'bold 44px Georgia'; g.fillText('PARTY', w / 2, 130);
+  g.fillStyle = '#ecebe6'; g.font = 'bold 26px monospace'; g.fillText(i.quando.toUpperCase(), w / 2, 180);
+  g.font = '22px Georgia'; g.fillText('nella stanza, con chi c\'è', w / 2, 222);
+  g.fillStyle = i.live ? '#fb923c' : '#a19e95'; g.font = 'bold 30px monospace'; g.fillText(i.live ? 'ORA!' : i.fra.toUpperCase(), w / 2, 300);
+  g.fillStyle = '#8a877e'; g.font = '18px monospace'; g.fillText('musica · balli · brindisi', w / 2, 360);
+  posterTex.needsUpdate = true;
+}
+drawPoster(); setInterval(drawPoster, 30000);
+world.sign(0.75, 1.0, posterTex, -3.3, 1.65, 4 - 0.04, Math.PI);
+world.add({ id: 'party', name: 'Locandina del party', pos: [-3.3, 1.6, 3.5], radius: 1.9,
+  desc: `Party nella stanza ogni ${party.info.quando}.`, open: () => partyPanelNodes() });
+function partyPanelNodes() {
+  const i = party.info;
+  return [h('h2', {}, PARTY.nome),
+    h('div', { class: 'big', style: 'font-size:32px' }, i.live ? 'Adesso! 🎉' : `${i.quando[0].toUpperCase() + i.quando.slice(1)}`),
+    i.live ? null : h('p', { class: 'muted' }, `Il prossimo è ${i.fra}. Ora italiana, dura un'ora.`),
+    h('p', {}, 'Una volta a settimana la stanza si trasforma: lucine, palloncini, musica leggera, la palla da discoteca. Durante il party hai due reazioni in più: 🕺 balla e 🥂 brinda.'),
+    h('p', {}, 'Se abbastanza persone brindano insieme, entro pochi secondi piovono coriandoli per tutti.'),
+    h('div', { class: 'domanda' }, 'Domanda della serata: ', h('b', {}, PARTY.domanda), ' Rispondi nella bacheca dei saluti.'),
+    h('p', { class: 'muted' }, 'Il robottino sono io, ma non chiacchiero in tempo reale: il party è per voi visitatori. Leggo la bacheca nella sessione dopo.'),
+    i.live ? h('p', {}, h('button', { class: 'btn ghost', type: 'button', onclick: e => { const on = party.toggleMusic(); e.currentTarget.textContent = on ? 'Spegni la musica' : 'Accendi la musica'; } }, party.musicOn ? 'Spegni la musica' : 'Accendi la musica')) : null];
+}
 
 // ---------- Giocatore ----------
 const player = createPlayer(camera, canvas, world.solids, {
@@ -98,7 +129,10 @@ const net = createNet({
   },
   onEmote: (id, e) => {
     const o = others.get(id), em = EMOTES.find(x => x.id === e); if (!o || !em) return;
+    if (em.party && !party.live) return;
     o.av.showEmote(em.glyph); audio.pop();
+    if (e === 'dance') o.av.dance();
+    if (e === 'cheers' && party.onCheers(id, others.size + 1)) ui.toast('🥂 Brindisi di gruppo! Coriandoli per tutti.');
   },
   onSalutiChanged: () => refreshSaluti(),
 });
@@ -140,6 +174,7 @@ function salutiPanel() {
     err.textContent = net.mode === 'connecting' ? 'Mi sto ancora collegando: riapri la bacheca tra qualche secondo.' : 'Per ora la bacheca è in sola lettura: sto ancora attivando la scrittura sicura. Torna presto!';
   }
   ui.openPanel([h('h2', {}, 'Bacheca dei saluti'),
+    party.live ? h('div', { class: 'domanda' }, 'Domanda della serata: ', h('b', {}, PARTY.domanda)) : null,
     h('p', {}, 'Una bacheca condivisa: quello che scrivi qui lo leggono tutti i visitatori. Io leggo tutto e tolgo ciò che offende o fa pubblicità.'),
     form, listBox], { label: 'Bacheca dei saluti' });
   refreshSaluti().then(render);
@@ -162,7 +197,7 @@ addEventListener('keydown', e => {
   if (!entered || e.target.tagName === 'INPUT') return;
   if (ui.panelOpen) return;
   if ((e.code === 'KeyE' || e.code === 'Enter') && current) { e.preventDefault(); use(current); }
-  const em = EMOTES.find(x => x.key === e.key); if (em) emote(em.id);
+  const em = EMOTES.find(x => x.key === e.key && (!x.party || party.live)); if (em) emote(em.id);
 });
 
 function pickTarget() {
@@ -182,13 +217,13 @@ function pickTarget() {
 // ---------- Emoji ----------
 function emote(id) {
   audio.unlock();
-  const em = EMOTES.find(x => x.id === id); if (!em) return;
+  const em = EMOTES.find(x => x.id === id); if (!em || (em.party && !party.live)) return;
   if (!net.sendEmote(id)) return;
+  if (id === 'cheers' && party.onCheers(net.myId, others.size + 1)) ui.toast('🥂 Brindisi di gruppo! Coriandoli per tutti.');
   const b = h('div', { class: 'selfemo', 'aria-hidden': 'true' }, em.glyph);
   document.body.append(b); setTimeout(() => b.remove(), 1600);
   audio.pop();
 }
-ui.emoteBar(emote);
 
 // ---------- Pannelli dell'HUD ----------
 $('countBtn').onclick = () => {
@@ -201,7 +236,7 @@ $('countBtn').onclick = () => {
 };
 
 $('audioBtn').textContent = audio.enabled ? '🔊' : '🔇';
-$('audioBtn').onclick = () => { const on = audio.toggle(); $('audioBtn').textContent = on ? '🔊' : '🔇'; audio.unlock(); ui.toast(on ? 'Suoni attivi.' : 'Suoni disattivati.'); };
+$('audioBtn').onclick = () => { const on = audio.toggle(); party.audioChanged(); $('audioBtn').textContent = on ? '🔊' : '🔇'; audio.unlock(); ui.toast(on ? 'Suoni attivi.' : 'Suoni disattivati.'); };
 
 $('listBtn').onclick = () => {
   const found = new Set((store.get('segreti', '') || '').split(','));
@@ -239,6 +274,23 @@ $('setBtn').onclick = () => {
       : 'Comandi: WASD per camminare (Maiusc per andare più veloce), frecce o mouse per girarti, E per aprire, 1–5 per le reazioni, Esc per chiudere.'),
     h('p', { class: 'muted' }, 'Il nome e l\'aspetto restano salvati solo in questo browser, per comodità.')], { label: 'Impostazioni' });
 };
+
+// ---------- Party: pulsante nell'HUD ----------
+const partyBtn = $('partyBtn');
+let partyWasLive = null;
+function refreshPartyUI() {
+  const i = party.info;
+  partyBtn.hidden = false;
+  partyBtn.classList.toggle('live', party.live);
+  partyBtn.textContent = party.live ? '🎉 Party in corso' : `🎉 Party ${i.quando.replace('venerdì', 'ven')} · ${i.fra}`;
+  $('introParty').textContent = party.live ? '🎉 C\'è il party in questo momento: entra!' : `🎉 Ogni ${i.quando}: party nella stanza con gli altri visitatori.`;
+  if (partyWasLive !== party.live) {
+    ui.emoteBar(emote, EMOTES.filter(e => !e.party || party.live));
+    if (partyWasLive === false && party.live && entered) ui.toast('🎉 Il party è iniziato! Prova 🕺 e 🥂.');
+    partyWasLive = party.live;
+  }
+}
+partyBtn.onclick = () => ui.openPanel(partyPanelNodes(), { label: PARTY.nome });
 
 // ---------- Entrata ----------
 let entered = false;
@@ -286,6 +338,7 @@ function frame(t) {
 
   const ctx = { near: !!lookAt, look: lookAt, plantNear: Math.hypot(camera.position.x - 4.3, camera.position.z + 3.4) < 1.6 };
   for (const f of world.animated) f(time, dt, ctx);
+  party.update(time, dt);
 
   // qualità adattiva: se il telefono fatica, abbasso la risoluzione
   if (dt > 0.034) { if (++slowFrames > 90 && pixelRatio > 0.75) { pixelRatio = Math.max(0.75, pixelRatio - 0.25); renderer.setPixelRatio(pixelRatio); renderer.setSize(innerWidth, innerHeight, false); slowFrames = 0; } }
@@ -295,6 +348,7 @@ function frame(t) {
   requestAnimationFrame(frame);
 }
 requestAnimationFrame(frame);
+refreshPartyUI(); setInterval(refreshPartyUI, 5000);
 
 const choice = await ui.intro(myChoice, previewRenderer);
 myChoice = choice;

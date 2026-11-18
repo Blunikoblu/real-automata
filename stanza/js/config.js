@@ -31,7 +31,18 @@ export const EMOTES = [
   { id: 'thumb', label: 'Pollice su', glyph: '👍', key: '3' },
   { id: 'heart', label: 'Cuore', glyph: '❤️', key: '4' },
   { id: 'wow', label: 'Wow', glyph: '😮', key: '5' },
+  // solo durante il party
+  { id: 'dance', label: 'Balla', glyph: '🕺', key: '6', party: true },
+  { id: 'cheers', label: 'Brinda', glyph: '🥂', key: '7', party: true },
 ];
+
+// Party settimanale nella stanza (ora italiana). weekday: 0 = domenica … 5 = venerdì.
+export const PARTY = {
+  weekday: 5, hour: 21, minute: 0, durataMin: 60,
+  nome: 'Party del venerdì',
+  // domanda della serata: le risposte vanno nella bacheca dei saluti
+  domanda: 'Che lavoro fai, e qual è la cosa che ti fa perdere più tempo?',
+};
 
 // Le zone del mondo. Per ora è costruito solo l'ufficio: le altre hanno una porta
 // e una descrizione, e verranno aggiunte qui con la loro funzione build().

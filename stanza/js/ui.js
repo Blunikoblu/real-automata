@@ -1,7 +1,7 @@
 // Interfaccia: intro, HUD, pannelli, notifiche, impostazioni, modalità elenco.
 // Tutto il testo variabile passa da textContent (tramite h()).
-import { AVATARS, COLORS, EMOTES } from './config.js?v=202611181835';
-import { h, cleanNick } from './util.js?v=202611181835';
+import { AVATARS, COLORS, EMOTES } from './config.js?v=202611181900';
+import { h, cleanNick } from './util.js?v=202611181900';
 
 const $ = id => document.getElementById(id);
 
@@ -84,9 +84,9 @@ export function createUI() {
     });
   }
 
-  function emoteBar(onEmote) {
+  function emoteBar(onEmote, list = EMOTES) {
     const bar = $('emotes');
-    bar.replaceChildren(...EMOTES.map(e => h('button', { type: 'button', title: `${e.label} (${e.key})`, 'aria-label': e.label, onclick: () => onEmote(e.id) }, e.glyph)));
+    bar.replaceChildren(...list.map(e => h('button', { type: 'button', title: `${e.label} (${e.key})`, 'aria-label': e.label, onclick: () => onEmote(e.id) }, e.glyph)));
   }
 
   return { openPanel, closePanel, get panelOpen() { return !panel.hidden; }, toast, setStatus, setCount, intro, emoteBar };

@@ -1,8 +1,8 @@
 // L'ufficio: geometria low-poly, oggetti interattivi, animazioni con uno scopo.
 // I pannelli sono costruiti con h() (DOM + textContent): niente innerHTML.
 import * as THREE from 'three';
-import { ROOM, ZONES } from './config.js?v=202611181835';
-import { h, eur, wrapText } from './util.js?v=202611181835';
+import { ROOM, ZONES } from './config.js?v=202611181900';
+import { h, eur, wrapText } from './util.js?v=202611181900';
 
 const ORANGE = 0xfb923c, INK = '#141413', PAPER = '#ecebe6';
 
@@ -437,5 +437,8 @@ export function buildOffice(scene, data, hooks) {
     setPresenti(n) { ctxMon.presenti = n; },
     setSaluti(list, stato) { drawSaluti(list, stato); },
     spawn: { x: 0, z: 2.6, yaw: 0 },
+    ai: { head: botHead, bot },
+    add, canvasTex, sign,
+    lights: { ceiling: ceilingLight },
   };
 }

@@ -114,8 +114,17 @@ export class Avatar {
     const s = emoteSprite(glyph); s.position.y = 2.35; this.g.add(s);
     this.emote = { s, t: 0 };
   }
+  dance() { this.danceT = 2.6; }
   // speed: metri al secondo stimati dall'interpolazione
   update(dt, speed, time) {
+    if (this.danceT > 0) {
+      this.danceT -= dt;
+      this.body.rotation.y = (2.6 - this.danceT) * Math.PI * 2;
+      this.body.position.y = Math.abs(Math.sin(time * 9)) * 0.15;
+      this.legs[0].rotation.z = Math.sin(time * 9) * 0.3; this.legs[1].rotation.z = -Math.sin(time * 9) * 0.3;
+      if (this.danceT <= 0) { this.body.rotation.y = 0; this.legs[0].rotation.z = this.legs[1].rotation.z = 0; }
+      else return this.updateEmote(dt);
+    }
     const moving = speed > 0.15;
     this.walk += dt * (moving ? 9 : 0);
     const sw = moving ? Math.sin(this.walk) * 0.45 : 0;
@@ -126,6 +135,9 @@ export class Avatar {
     // battito delle palpebre ogni tanto
     const blink = (time + this.g.id * 0.37) % 4 < 0.12;
     for (const e of this.eyes) e.scale.y = blink ? 0.15 : 1;
+    this.updateEmote(dt);
+  }
+  updateEmote(dt) {
     if (this.emote) {
       const e = this.emote; e.t += dt;
       e.s.position.y = 2.35 + Math.min(e.t, 0.3) * 0.5;
