@@ -3,8 +3,8 @@
 // - Broadcast: posizione a frequenza limitata, emoji, avviso "bacheca aggiornata".
 // - Accesso anonimo invisibile (sessione per scheda, in sessionStorage).
 // - Se qualcosa non va: canale pubblico di ripiego, poi modalità individuale.
-import { SUPABASE_URL, SUPABASE_KEY, CHANNEL_PRIVATE, CHANNEL_PUBLIC, NET, AVATARS, EMOTES, ROOM } from './config.js?v=202611181900';
-import { cleanNick, cleanText, isColor, clamp, randomId } from './util.js?v=202611181900';
+import { SUPABASE_URL, SUPABASE_KEY, CHANNEL_PRIVATE, CHANNEL_PUBLIC, NET, AVATARS, EMOTES, ROOM } from './config.js?v=202611181909';
+import { cleanNick, cleanText, isColor, clamp, randomId } from './util.js?v=202611181909';
 
 const AV_IDS = new Set(AVATARS.map(a => a.id));
 const EMO_IDS = new Set(EMOTES.map(e => e.id));
@@ -18,7 +18,7 @@ export function createNet(h) {
   let last = { x: 0, z: 0, r: 0, sent: 0, sx: 99, sz: 99, sr: 99 };
   let sbPromise = null;
   function client() {
-    sbPromise ||= import('../supabase.min.js?v=202611181900').then(({ createClient }) => (sb = createClient(SUPABASE_URL, SUPABASE_KEY, {
+    sbPromise ||= import('../supabase.min.js?v=202611181909').then(({ createClient }) => (sb = createClient(SUPABASE_URL, SUPABASE_KEY, {
       auth: { storage: window.sessionStorage, storageKey: 'ra-mondo-auth', persistSession: true, autoRefreshToken: true, detectSessionInUrl: false },
       realtime: { params: { eventsPerSecond: 20 }, heartbeatIntervalMs: 20000 },
     })));

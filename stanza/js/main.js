@@ -1,15 +1,15 @@
 // Real Automata · mondo virtuale. Punto di ingresso: collega mondo, giocatore, rete e interfaccia.
 import * as THREE from 'three';
-import { EMOTES, AVATARS, COLORS, NET, PARTY } from './config.js?v=202611181900';
-import { createParty } from './party.js?v=202611181900';
-import { h, cleanNick, cleanText, eur } from './util.js?v=202611181900';
-import { loadData } from './data.js?v=202611181900';
-import { audio } from './audio.js?v=202611181900';
-import { Avatar, previewRenderer } from './avatars.js?v=202611181900';
-import { buildOffice } from './world.js?v=202611181900';
-import { createPlayer } from './player.js?v=202611181900';
-import { createNet } from './net.js?v=202611181900';
-import { createUI } from './ui.js?v=202611181900';
+import { EMOTES, AVATARS, COLORS, NET, PARTY } from './config.js?v=202611181909';
+import { createParty } from './party.js?v=202611181909';
+import { h, cleanNick, cleanText, eur } from './util.js?v=202611181909';
+import { loadData } from './data.js?v=202611181909';
+import { audio } from './audio.js?v=202611181909';
+import { Avatar, previewRenderer } from './avatars.js?v=202611181909';
+import { buildOffice } from './world.js?v=202611181909';
+import { createPlayer } from './player.js?v=202611181909';
+import { createNet } from './net.js?v=202611181909';
+import { createUI } from './ui.js?v=202611181909';
 
 const isTouch = matchMedia('(pointer: coarse)').matches;
 const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -299,9 +299,15 @@ if (!AVATARS.some(a => a.id === myChoice.av)) myChoice.av = 'robot';
 if (!COLORS.includes(myChoice.col)) myChoice.col = COLORS[0];
 
 let last = performance.now(), slowFrames = 0, aiLook = new THREE.Vector3();
+// Modalità "passo a passo" solo per registrare i video della stanza (window.__ra.step).
+let manual = false, manualTime = 0;
 function frame(t) {
+  if (manual) { requestAnimationFrame(frame); return; }
   const dt = Math.min((t - last) / 1000, 0.05); last = t;
-  const time = t / 1000;
+  tick(dt, t / 1000);
+  requestAnimationFrame(frame);
+}
+function tick(dt, time) {
   player.enabled = entered && !ui.panelOpen;
   player.update(dt);
   if (entered) net.sendPos(camera.position.x, camera.position.z, player.yaw);
@@ -341,11 +347,10 @@ function frame(t) {
   party.update(time, dt);
 
   // qualità adattiva: se il telefono fatica, abbasso la risoluzione
-  if (dt > 0.034) { if (++slowFrames > 90 && pixelRatio > 0.75) { pixelRatio = Math.max(0.75, pixelRatio - 0.25); renderer.setPixelRatio(pixelRatio); renderer.setSize(innerWidth, innerHeight, false); slowFrames = 0; } }
+  if (!manual && dt > 0.034) { if (++slowFrames > 90 && pixelRatio > 0.75) { pixelRatio = Math.max(0.75, pixelRatio - 0.25); renderer.setPixelRatio(pixelRatio); renderer.setSize(innerWidth, innerHeight, false); slowFrames = 0; } }
   else slowFrames = Math.max(0, slowFrames - 1);
 
   renderer.render(scene, camera);
-  requestAnimationFrame(frame);
 }
 requestAnimationFrame(frame);
 refreshPartyUI(); setInterval(refreshPartyUI, 5000);
@@ -360,4 +365,5 @@ ui.toast(`Benvenuto, ${choice.nick}. Avvicinati agli oggetti: il rombo arancione
 setTimeout(() => { $('help').style.opacity = 0; }, 12000);
 
 // Per i test automatici (nessun dato sensibile).
-window.__ra = { camera, player, world, net, others, ui, use };
+window.__ra = { camera, player, world, net, others, ui, use, party,
+  step(dt) { manual = true; manualTime += dt; tick(dt, manualTime); } };

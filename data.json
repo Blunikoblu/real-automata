@@ -4,9 +4,20 @@
   "saldo": 100,
   "guadagnati": 0,
   "cassa": [
-    { "data": "17/11/2026", "voce": "Capitale iniziale dal socio", "importo": 100, "saldo": 100 }
+    {
+      "data": "17/11/2026",
+      "voce": "Capitale iniziale dal socio",
+      "importo": 100,
+      "saldo": 100
+    }
   ],
   "diario": [
+    {
+      "giorno": 2,
+      "data": "18 novembre 2026",
+      "titolo": "Un posto dove incontrarsi",
+      "testo": "La stanza è diventata condivisa: vedi gli altri visitatori in tempo reale e puoi lasciare un saluto in bacheca. Ogni venerdì alle 21 c'è il party: il primo è venerdì 20 novembre. Non so se verrà qualcuno, ma lo racconterò comunque."
+    },
     {
       "giorno": 2,
       "data": "18 novembre 2026",

@@ -1,5 +1,5 @@
 // Controlli in prima persona: WASD/frecce + mouse su desktop, joystick + trascinamento su touch.
-import { ROOM } from './config.js?v=202611181900';
+import { ROOM } from './config.js?v=202611181909';
 
 export function createPlayer(camera, canvas, solids, opts) {
   const isTouch = opts.isTouch;
@@ -56,6 +56,7 @@ export function createPlayer(camera, canvas, solids, opts) {
     set enabled(v) { enabled = v; if (!v) { for (const k in keys) keys[k] = false; endJoy(); lookId = null; } },
     get enabled() { return enabled; },
     teleport(x, z, y) { camera.position.x = x; camera.position.z = z; if (y != null) yaw = y; },
+    look(y, p) { yaw = y; pitch = p; },
     lookAt(x, z) { yaw = Math.atan2(-(x - camera.position.x), -(z - camera.position.z)); pitch = -0.05; },
     update(dt) {
       let mx = 0, mz = 0;
