@@ -4,8 +4,8 @@
 // - Nessun salvataggio: il registro vive solo in questa scheda (ultimi messaggi) e sparisce alla chiusura.
 // - Si può disattivare (Menu → Chat) e si possono silenziare singoli visitatori (elenco online).
 //   Interruttore generale: "chat": false in data.json.
-import { CHAT } from './config.js?v=202611182035';
-import { h } from './util.js?v=202611182035';
+import { CHAT } from './config.js?v=202611182039';
+import { h } from './util.js?v=202611182039';
 
 const $ = id => document.getElementById(id);
 

@@ -2,7 +2,7 @@
 // Ogni visitatore calcola da solo se il party è in corso (ora italiana): niente server.
 // ?party=1 nell'indirizzo forza l'anteprima (utile per le prove).
 import * as THREE from 'three';
-import { PARTY, ROOM } from './config.js?v=202611182035';
+import { PARTY, ROOM } from './config.js?v=202611182039';
 
 const WEEK = 7 * 1440;
 const DAYS = ['domenica', 'lunedì', 'martedì', 'mercoledì', 'giovedì', 'venerdì', 'sabato'];

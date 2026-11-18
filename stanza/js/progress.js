@@ -4,7 +4,7 @@
 // Il mondo li usa per: trofei sulla mensola, decorazioni sbloccate, festa del robottino.
 // Nessun numero viene inventato o stimato qui.
 import * as THREE from 'three';
-import { h, eur } from './util.js?v=202611182035';
+import { h, eur } from './util.js?v=202611182039';
 
 const DAY = 86400000;
 const fmt = d => d ? d.toLocaleDateString('it-IT', { day: 'numeric', month: 'long', year: 'numeric' }) : null;

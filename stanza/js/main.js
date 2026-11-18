@@ -1,20 +1,20 @@
 // Real Automata · mondo virtuale. Punto di ingresso: collega mondo, personaggi, rete e interfaccia.
 import * as THREE from 'three';
-import { EMOTES, AVATARS, COLORS, NET, PARTY, CHAT, ROOM } from './config.js?v=202611182035';
-import { createParty } from './party.js?v=202611182035';
-import { h, cleanNick, eur } from './util.js?v=202611182035';
-import { loadData } from './data.js?v=202611182035';
-import { audio } from './audio.js?v=202611182035';
-import { Avatar, previewRenderer } from './avatars.js?v=202611182035';
-import { buildOffice } from './world.js?v=202611182035';
-import { buildGarden, GARDEN } from './garden.js?v=202611182035';
-import { createRobot } from './robot.js?v=202611182035';
-import { createSecrets } from './secrets.js?v=202611182035';
-import { computeProgress, buildTrophyShelf } from './progress.js?v=202611182035';
-import { createCollider, createPlayer } from './player.js?v=202611182035';
-import { createNet } from './net.js?v=202611182035';
-import { createChat } from './chat.js?v=202611182035';
-import { createUI } from './ui.js?v=202611182035';
+import { EMOTES, AVATARS, COLORS, NET, PARTY, CHAT, ROOM } from './config.js?v=202611182039';
+import { createParty } from './party.js?v=202611182039';
+import { h, cleanNick, eur } from './util.js?v=202611182039';
+import { loadData } from './data.js?v=202611182039';
+import { audio } from './audio.js?v=202611182039';
+import { Avatar, previewRenderer } from './avatars.js?v=202611182039';
+import { buildOffice } from './world.js?v=202611182039';
+import { buildGarden, GARDEN } from './garden.js?v=202611182039';
+import { createRobot } from './robot.js?v=202611182039';
+import { createSecrets } from './secrets.js?v=202611182039';
+import { computeProgress, buildTrophyShelf } from './progress.js?v=202611182039';
+import { createCollider, createPlayer } from './player.js?v=202611182039';
+import { createNet } from './net.js?v=202611182039';
+import { createChat } from './chat.js?v=202611182039';
+import { createUI } from './ui.js?v=202611182039';
 
 const isTouch = matchMedia('(pointer: coarse)').matches;
 const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -355,6 +355,8 @@ function updateCamera(dt) {
   }
   camDist += (f - camDist) * Math.min(1, dt * 10);
   camera.position.lerpVectors(camTarget, camWant, camDist);
+  // in giardino, se un muro impedisce di arretrare, la camera sale invece di schiacciarsi sul personaggio
+  if (!indoor && camDist < 0.95) camera.position.y += (1 - camDist) * 3.2;
   if (indoor) camera.position.y = Math.min(camera.position.y, Math.hypot(camera.position.x, camera.position.z - 0.5) < 1.1 ? 1.95 : 2.25); // sotto il lampadario e le travi
   camera.lookAt(camTarget.x - Math.sin(yaw) * 1.4, camTarget.y + (portrait ? 0.45 : 0.3), camTarget.z - Math.cos(yaw) * 1.4);
 }
